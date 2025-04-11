@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory Game</title>
+<link rel="stylesheet" href="game.css">
+</head>
+
+
+<body>
+
+  <div class="marquee">
+  <div class="marquee-content"> << WELCOME TO THE MEMORY GAME DEMO  >> </div>
+  </div>
+
+<h1>Memory Game</h1>
+<div class="stats">
+  Matches: <span id="matches">0</span> |
+  Mismatches: <span id="mismatches">0</span> |
+  Total Moves: <span id="moves">0</span>
+</div>
+<div class="grid" id="grid"></div>
+
+<div class="buttons">
+  <button onclick="undoMove()">Undo</button>
+  <button onclick="restartGame()">Restart</button>
+  <button id="tryAgainBtn" class="hidden" onclick="restartGame()">Try Again</button>
+</div>
+
+
+
+
+<script>
+const icons = ['🍎','🍌','🍇','🍓','🍍'];
+let cards = [];
+let flippedCards = [];
+let matchedCards = [];
+let moveHistory = [];
+let matches = 0;
+let mismatches = 0;
+let moves = 0;
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function createBoard() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const cardIcons = shuffle([...icons, ...icons]);
+  cards = cardIcons.map((icon, index) => {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.dataset.icon = icon;
+    card.dataset.index = index;
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">
+        </div>
+        <div class="card-back">${icon}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => flipCard(card));
+    grid.appendChild(card);
+    return card;
+  });
+  updateStats();
+}
+
+function flipCard(card) {
+  if (flippedCards.length >= 2 || card.classList.contains('flipped') || matchedCards.includes(card)) return;
+  card.classList.add('flipped');
+  flippedCards.push(card);
+
+  if (flippedCards.length === 2) {
+    moves++;
+    moveHistory.push([...flippedCards]);
+    if (flippedCards[0].dataset.icon === flippedCards[1].dataset.icon) {
+      matches++;
+      matchedCards.push(...flippedCards);
+      flippedCards = [];
+      checkGameOver();
+    } else {
+      mismatches++;
+      setTimeout(() => {
+        flippedCards.forEach(card => card.classList.remove('flipped'));
+        flippedCards = [];
+      }, 800);
+    }
+    updateStats();
+  }
+}
+
+function updateStats() {
+  document.getElementById('matches').textContent = matches;
+  document.getElementById('mismatches').textContent = mismatches;
+  document.getElementById('moves').textContent = moves;
+}
+
+function undoMove() {
+  const lastMove = moveHistory.pop();
+  if (!lastMove) return;
+  lastMove.forEach(card => {
+    if (matchedCards.includes(card)) {
+      matchedCards = matchedCards.filter(c => c !== card);
+    }
+    card.classList.remove('flipped');
+  });
+  if (lastMove[0].dataset.icon === lastMove[1].dataset.icon) {
+    matches--;
+  } else {
+    mismatches--;
+  }
+  moves--;
+  flippedCards = [];
+  updateStats();
+}
+
+function restartGame() {
+  matches = 0;
+  mismatches = 0;
+  moves = 0;
+  moveHistory = [];
+  matchedCards = [];
+  flippedCards = [];
+  document.getElementById('tryAgainBtn').classList.add('hidden');
+  createBoard();
+}
+
+function checkGameOver() {
+  if (matchedCards.length === cards.length) {
+    document.getElementById('tryAgainBtn').classList.remove('hidden');
+  }
+}
+
+// Initialize
+createBoard();
+</script>
+
+</body>
+</html>
